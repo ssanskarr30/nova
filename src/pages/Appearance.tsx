@@ -78,13 +78,10 @@ function Appearance() {
 
 
   function selectTheme(
-    value: Theme,
-  ) {
-
-    setTheme(value)
-
-    applyTheme(value)
-  }
+  value: Theme,
+) {
+  setTheme(value)
+}
 
 
   const options = [

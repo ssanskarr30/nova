@@ -1,6 +1,5 @@
 import {
   useMemo,
-  useRef,
   useState,
 } from 'react'
 
@@ -46,6 +45,10 @@ import {
 import AttendanceModal from '../components/AttendanceModal'
 
 
+/* =====================================================
+   DAYS
+===================================================== */
+
 const days: Day[] = [
   'Monday',
   'Tuesday',
@@ -57,10 +60,73 @@ const days: Day[] = [
 ]
 
 
+/* =====================================================
+   CALENDAR HELPERS
+===================================================== */
+
+function startOfMonth(
+  date: Date,
+) {
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    1,
+  )
+}
+
+
+function getDaysInMonth(
+  date: Date,
+) {
+  return new Date(
+    date.getFullYear(),
+    date.getMonth() + 1,
+    0,
+  ).getDate()
+}
+
+
+function getCalendarOffset(
+  date: Date,
+) {
+  /*
+   * JavaScript:
+   *
+   * Sunday = 0
+   * Monday = 1
+   * ...
+   *
+   * Convert so Monday = 0.
+   */
+
+  return (
+    startOfMonth(date).getDay() +
+    6
+  ) % 7
+}
+
+
+function formatCalendarMonth(
+  date: Date,
+) {
+  return date.toLocaleDateString(
+    'en-IN',
+    {
+      month: 'long',
+      year: 'numeric',
+    },
+  )
+}
+
+
+/* =====================================================
+   STUDY PAGE
+===================================================== */
+
 function Study() {
 
   /* =====================================================
-     CURRENT DATE
+     TODAY
   ===================================================== */
 
   const todayDate =
@@ -83,6 +149,7 @@ function Study() {
     today,
   )
 
+
   const [
     selectedDate,
     setSelectedDate,
@@ -90,31 +157,25 @@ function Study() {
     todayDate,
   )
 
-  const dateInputRef =
-  useRef<HTMLInputElement | null>(
-    null,
+
+  /* =====================================================
+     CALENDAR STATE
+  ===================================================== */
+
+  const [
+    calendarOpen,
+    setCalendarOpen,
+  ] = useState(false)
+
+
+  const [
+    calendarMonth,
+    setCalendarMonth,
+  ] = useState<Date>(
+    startOfMonth(
+      todayDate,
+    ),
   )
-
-  function handleDateChange(
-  event: React.ChangeEvent<HTMLInputElement>,
-) {
-  const value = event.target.value
-
-  if (!value) {
-    return
-  }
-
-  const date =
-    new Date(
-      `${value}T00:00:00`,
-    )
-
-  setSelectedDate(date)
-
-  setSelectedDay(
-    getDayFromDate(date),
-  )
-}
 
 
   /* =====================================================
@@ -130,7 +191,7 @@ function Study() {
 
 
   /* =====================================================
-     SESSIONS
+     TIMETABLE SESSIONS
   ===================================================== */
 
   const sessions =
@@ -146,7 +207,7 @@ function Study() {
 
 
   /* =====================================================
-     DATE KEY
+     SELECTED DATE KEY
   ===================================================== */
 
   const selectedDateKey =
@@ -157,6 +218,7 @@ function Study() {
 
   /* =====================================================
      LIVE ATTENDANCE
+     FOR SELECTED DAY
   ===================================================== */
 
   const attendanceRecords =
@@ -178,6 +240,25 @@ function Study() {
 
 
   /* =====================================================
+     ALL ATTENDANCE
+     
+     Used by calendar to determine
+     which dates have attendance.
+  ===================================================== */
+
+  const allAttendance =
+    useLiveQuery(
+      () =>
+        db.attendance
+          .toArray(),
+
+      [],
+
+      [],
+    )
+
+
+  /* =====================================================
      CURRENT / NEXT CLASS
   ===================================================== */
 
@@ -186,6 +267,7 @@ function Study() {
       todayDate,
     )
 
+
   const nextClass =
     getNextClass(
       todayDate,
@@ -193,7 +275,7 @@ function Study() {
 
 
   /* =====================================================
-     SELECTED SESSION
+     SELECTED SESSION OBJECT
   ===================================================== */
 
   const selectedSession =
@@ -205,7 +287,7 @@ function Study() {
 
 
   /* =====================================================
-     GET STATUS
+     GET ATTENDANCE STATUS
   ===================================================== */
 
   function getStatusForSession(
@@ -227,7 +309,162 @@ function Study() {
 
 
   /* =====================================================
-     SELECT DAY
+     GET DAY ATTENDANCE SUMMARY
+     
+     absent > present > other
+  ===================================================== */
+
+  function getDayAttendanceStatus(
+    date: Date,
+  ) {
+
+    const dateKey =
+      formatDateKey(
+        date,
+      )
+
+    const records =
+      allAttendance.filter(
+        (record) =>
+          record.date ===
+          dateKey,
+      )
+
+    if (
+      records.length === 0
+    ) {
+      return null
+    }
+
+
+    /*
+     * If there is even one absent
+     * class on that day, show RED.
+     */
+
+    if (
+      records.some(
+        (record) =>
+          record.status ===
+          'absent',
+      )
+    ) {
+      return 'absent'
+    }
+
+
+    /*
+     * Otherwise if there is a
+     * present class, show GREEN.
+     */
+
+    if (
+      records.some(
+        (record) =>
+          record.status ===
+          'present',
+      )
+    ) {
+      return 'present'
+    }
+
+
+    /*
+     * Cancelled / holiday etc.
+     */
+
+    return 'other'
+  }
+
+
+  /* =====================================================
+     SELECT DATE FROM CALENDAR
+  ===================================================== */
+
+  function selectCalendarDate(
+    date: Date,
+  ) {
+
+    const nextDate =
+      new Date(
+        date,
+      )
+
+    setSelectedDate(
+      nextDate,
+    )
+
+    setSelectedDay(
+      getDayFromDate(
+        nextDate,
+      ),
+    )
+
+    setCalendarMonth(
+      startOfMonth(
+        nextDate,
+      ),
+    )
+
+    setCalendarOpen(
+      false,
+    )
+  }
+
+
+  /* =====================================================
+     OPEN / CLOSE CALENDAR
+  ===================================================== */
+
+  function openCalendar() {
+
+    setCalendarMonth(
+      startOfMonth(
+        selectedDate,
+      ),
+    )
+
+    setCalendarOpen(
+      (value) =>
+        !value,
+    )
+  }
+
+
+  /* =====================================================
+     PREVIOUS CALENDAR MONTH
+  ===================================================== */
+
+  function previousCalendarMonth() {
+
+    setCalendarMonth(
+      new Date(
+        calendarMonth.getFullYear(),
+        calendarMonth.getMonth() - 1,
+        1,
+      ),
+    )
+  }
+
+
+  /* =====================================================
+     NEXT CALENDAR MONTH
+  ===================================================== */
+
+  function nextCalendarMonth() {
+
+    setCalendarMonth(
+      new Date(
+        calendarMonth.getFullYear(),
+        calendarMonth.getMonth() + 1,
+        1,
+      ),
+    )
+  }
+
+
+  /* =====================================================
+     SELECT DAY PILL
   ===================================================== */
 
   function selectDay(
@@ -240,8 +477,10 @@ function Study() {
       )
 
     const currentDayIndex =
-      (date.getDay() + 6) %
-      7
+      (
+        date.getDay() +
+        6
+      ) % 7
 
     const targetDayIndex =
       days.indexOf(
@@ -254,7 +493,7 @@ function Study() {
 
     date.setDate(
       date.getDate() +
-        difference,
+      difference,
     )
 
     setSelectedDay(
@@ -264,11 +503,17 @@ function Study() {
     setSelectedDate(
       date,
     )
+
+    setCalendarMonth(
+      startOfMonth(
+        date,
+      ),
+    )
   }
 
 
   /* =====================================================
-     MOVE DAY
+     MOVE ONE DAY
   ===================================================== */
 
   function moveDay(
@@ -305,7 +550,7 @@ function Study() {
 
     date.setDate(
       date.getDate() +
-        direction,
+      direction,
     )
 
     setSelectedDay(
@@ -315,11 +560,17 @@ function Study() {
     setSelectedDate(
       date,
     )
+
+    setCalendarMonth(
+      startOfMonth(
+        date,
+      ),
+    )
   }
 
 
   /* =====================================================
-     OPEN ATTENDANCE
+     OPEN ATTENDANCE MODAL
   ===================================================== */
 
   function openAttendance(
@@ -337,9 +588,10 @@ function Study() {
       return
     }
 
+
     /*
-     * Only actual classes
-     * can have attendance.
+     * Only theory and practical
+     * classes have attendance.
      */
 
     if (
@@ -371,29 +623,10 @@ function Study() {
       return
     }
 
-    /*
-     * setAttendance uses
-     * db.attendance.put()
-     *
-     * Therefore:
-     *
-     * New record → created
-     *
-     * Existing record →
-     * updated
-     */
-
     await setAttendance(
       selectedSession,
       status,
     )
-
-    /*
-     * Close modal.
-     *
-     * useLiveQuery automatically
-     * detects the IndexedDB change.
-     */
 
     setSelectedSessionId(
       null,
@@ -401,17 +634,94 @@ function Study() {
   }
 
 
+  /* =====================================================
+     UNMARK ATTENDANCE
+  ===================================================== */
+
   async function handleAttendanceUnmark() {
-  if (!selectedSession) {
-    return
+
+    if (
+      !selectedSession
+    ) {
+      return
+    }
+
+    await removeAttendance(
+      selectedSession.occurrenceId,
+    )
+
+    setSelectedSessionId(
+      null,
+    )
   }
 
-  await removeAttendance(
-    selectedSession.occurrenceId,
-  )
 
-  setSelectedSessionId(null)
-}
+  /* =====================================================
+     CALENDAR DAYS
+  ===================================================== */
+
+  const calendarDays =
+    useMemo(() => {
+
+      const totalDays =
+        getDaysInMonth(
+          calendarMonth,
+        )
+
+      const offset =
+        getCalendarOffset(
+          calendarMonth,
+        )
+
+      const cells: (
+        Date | null
+      )[] = []
+
+
+      /*
+       * Empty cells before
+       * first day of month.
+       */
+
+      for (
+        let index = 0;
+        index < offset;
+        index++
+      ) {
+
+        cells.push(
+          null,
+        )
+
+      }
+
+
+      /*
+       * Actual month days.
+       */
+
+      for (
+        let day = 1;
+        day <= totalDays;
+        day++
+      ) {
+
+        cells.push(
+          new Date(
+            calendarMonth.getFullYear(),
+            calendarMonth.getMonth(),
+            day,
+          ),
+        )
+
+      }
+
+
+      return cells
+
+    }, [
+      calendarMonth,
+    ])
 
 
   /* =====================================================
@@ -440,31 +750,309 @@ function Study() {
         </div>
 
 
-       <button
-  type="button"
-  className="timetable-calendar-button"
-  aria-label="Choose a date"
-  onClick={() =>
-    dateInputRef.current?.click()
-  }
->
-  <CalendarDays
-    size={20}
-  />
+        {/* =================================================
+            CALENDAR BUTTON
+        ================================================= */}
 
-  <input
-    ref={dateInputRef}
-    type="date"
-    value={formatDateKey(
-      selectedDate,
-    )}
-    onChange={
-      handleDateChange
-    }
-    className="timetable-date-input"
-    aria-label="Choose timetable date"
-  />
-</button>
+        <div className="timetable-calendar-wrapper">
+
+          <button
+            type="button"
+            className={`timetable-calendar-button ${
+              calendarOpen
+                ? 'active'
+                : ''
+            }`}
+            aria-label="Choose a date"
+            aria-expanded={
+              calendarOpen
+            }
+            onClick={
+              openCalendar
+            }
+          >
+
+            <CalendarDays
+              size={20}
+            />
+
+          </button>
+
+
+          {/* =================================================
+              CALENDAR POPUP
+          ================================================= */}
+
+          {calendarOpen && (
+
+            <div className="attendance-calendar-popover">
+
+              {/* =========================================
+                  CALENDAR HEADER
+              ========================================= */}
+
+              <div className="attendance-calendar-header">
+
+                <button
+                  type="button"
+                  className="attendance-calendar-nav"
+                  onClick={
+                    previousCalendarMonth
+                  }
+                  aria-label="Previous month"
+                >
+
+                  <ChevronLeft
+                    size={17}
+                  />
+
+                </button>
+
+
+                <div className="attendance-calendar-title">
+
+                  <strong>
+                    {formatCalendarMonth(
+                      calendarMonth,
+                    )}
+                  </strong>
+
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      selectCalendarDate(
+                        new Date(),
+                      )
+                    }
+                  >
+                    Go to today
+                  </button>
+
+                </div>
+
+
+                <button
+                  type="button"
+                  className="attendance-calendar-nav"
+                  onClick={
+                    nextCalendarMonth
+                  }
+                  aria-label="Next month"
+                >
+
+                  <ChevronRight
+                    size={17}
+                  />
+
+                </button>
+
+              </div>
+
+
+              {/* =========================================
+                  WEEKDAYS
+              ========================================= */}
+
+              <div className="attendance-calendar-weekdays">
+
+                {[
+                  'M',
+                  'T',
+                  'W',
+                  'T',
+                  'F',
+                  'S',
+                  'S',
+                ].map(
+                  (
+                    day,
+                    index,
+                  ) => (
+
+                    <span
+                      key={`${day}-${index}`}
+                    >
+                      {day}
+                    </span>
+
+                  ),
+                )}
+
+              </div>
+
+
+              {/* =========================================
+                  CALENDAR DAYS
+              ========================================= */}
+
+              <div className="attendance-calendar-grid">
+
+                {calendarDays.map(
+                  (
+                    date,
+                    index,
+                  ) => {
+
+                    /*
+                     * Empty calendar cell.
+                     */
+
+                    if (!date) {
+
+                      return (
+                        <div
+                          key={`empty-${index}`}
+                          aria-hidden="true"
+                        />
+                      )
+
+                    }
+
+
+                    const dateKey =
+                      formatDateKey(
+                        date,
+                      )
+
+
+                    const selected =
+                      dateKey ===
+                      selectedDateKey
+
+
+                    const isToday =
+                      date.toDateString() ===
+                      todayDate.toDateString()
+
+
+                    const attendanceStatus =
+                      getDayAttendanceStatus(
+                        date,
+                      )
+
+
+                    return (
+
+                      <button
+                        type="button"
+
+                        key={
+                          dateKey
+                        }
+
+                        className={`attendance-calendar-day ${
+                          selected
+                            ? 'selected'
+                            : ''
+                        } ${
+                          isToday
+                            ? 'today'
+                            : ''
+                        }`}
+
+                        onClick={() =>
+                          selectCalendarDate(
+                            date,
+                          )
+                        }
+
+                        aria-label={
+                          `${date.toLocaleDateString(
+                            'en-IN',
+                            {
+                              day:
+                                'numeric',
+                              month:
+                                'long',
+                              year:
+                                'numeric',
+                            },
+                          )}${
+                            attendanceStatus ===
+                            'absent'
+                              ? ', absent marked'
+                              : attendanceStatus ===
+                                'present'
+                              ? ', present marked'
+                              : attendanceStatus ===
+                                'other'
+                              ? ', other attendance marked'
+                              : ''
+                          }`
+                        }
+                      >
+
+                        <span className="calendar-day-number">
+
+                          {
+                            date.getDate()
+                          }
+
+                        </span>
+
+
+                        {attendanceStatus && (
+
+                          <span className="calendar-attendance-dots">
+
+                            <span
+                              className={`calendar-dot ${attendanceStatus}`}
+                            />
+
+                          </span>
+
+                        )}
+
+                      </button>
+
+                    )
+
+                  },
+                )}
+
+              </div>
+
+
+              {/* =========================================
+                  CALENDAR LEGEND
+              ========================================= */}
+
+              <div className="attendance-calendar-legend">
+
+                <span>
+
+                  <i className="calendar-dot present" />
+
+                  Present
+
+                </span>
+
+
+                <span>
+
+                  <i className="calendar-dot absent" />
+
+                  Absent
+
+                </span>
+
+
+                <span>
+
+                  <i className="calendar-dot other" />
+
+                  Other
+
+                </span>
+
+              </div>
+
+            </div>
+
+          )}
+
+        </div>
 
       </header>
 
@@ -472,10 +1060,12 @@ function Study() {
       {/* =================================================
           CURRENT CLASS
       ================================================= */}
-{currentClass &&
-  selectedDate.toDateString() ===
-    todayDate.toDateString() && (
-  <section className="current-class-card">
+
+      {currentClass &&
+        selectedDate.toDateString() ===
+          todayDate.toDateString() && (
+
+        <section className="current-class-card">
 
           <div className="current-class-label">
 
@@ -485,9 +1075,11 @@ function Study() {
 
           </div>
 
+
           <h2>
             {currentClass.subject}
           </h2>
+
 
           <div className="current-class-meta">
 
@@ -500,6 +1092,7 @@ function Study() {
             {formatTime(
               currentClass.endTime,
             )}
+
 
             {currentClass.type ===
               'practical' && (
@@ -522,41 +1115,43 @@ function Study() {
       ================================================= */}
 
       {!currentClass &&
-  nextClass &&
-  selectedDate.toDateString() ===
-    todayDate.toDateString() && (
+        nextClass &&
+        selectedDate.toDateString() ===
+          todayDate.toDateString() && (
 
-          <section className="next-class-card">
+        <section className="next-class-card">
 
-            <div className="next-class-label">
-              NEXT CLASS
-            </div>
+          <div className="next-class-label">
+            NEXT CLASS
+          </div>
 
-            <h2>
-              {nextClass.subject}
-            </h2>
 
-            <div className="next-class-time">
+          <h2>
+            {nextClass.subject}
+          </h2>
 
-              <Clock3
-                size={15}
-              />
 
-              {formatTime(
-                nextClass.startTime,
-              )}
+          <div className="next-class-time">
 
-              {' – '}
+            <Clock3
+              size={15}
+            />
 
-              {formatTime(
-                nextClass.endTime,
-              )}
+            {formatTime(
+              nextClass.startTime,
+            )}
 
-            </div>
+            {' – '}
 
-          </section>
+            {formatTime(
+              nextClass.endTime,
+            )}
 
-        )}
+          </div>
+
+        </section>
+
+      )}
 
 
       {/* =================================================
@@ -575,9 +1170,11 @@ function Study() {
             }
             aria-label="Previous day"
           >
+
             <ChevronLeft
               size={18}
             />
+
           </button>
 
 
@@ -587,9 +1184,11 @@ function Study() {
               WEEKLY SCHEDULE
             </span>
 
+
             <h2>
               {selectedDay}
             </h2>
+
 
             <div className="selected-date">
 
@@ -598,6 +1197,7 @@ function Study() {
               />
 
               <span>
+
                 {selectedDate.toLocaleDateString(
                   'en-IN',
                   {
@@ -609,6 +1209,7 @@ function Study() {
                       'numeric',
                   },
                 )}
+
               </span>
 
             </div>
@@ -624,15 +1225,19 @@ function Study() {
             }
             aria-label="Next day"
           >
+
             <ChevronRight
               size={18}
             />
+
           </button>
 
         </div>
 
 
-        {/* DAY PILLS */}
+        {/* =================================================
+            DAY PILLS
+        ================================================= */}
 
         <div className="day-pills">
 
@@ -694,9 +1299,11 @@ function Study() {
 
             </div>
 
+
             <h2>
               No Classes
             </h2>
+
 
             <p>
               There are no scheduled
@@ -717,10 +1324,12 @@ function Study() {
                     session.occurrenceId,
                   )
 
+
                 const isCurrent =
                   currentClass
                     ?.occurrenceId ===
                   session.occurrenceId
+
 
                 const isAttendanceClass =
                   session.type ===
@@ -767,10 +1376,11 @@ function Study() {
                         session.occurrenceId,
                       )
                     }
-
                   >
 
-                    {/* TIME */}
+                    {/* =================================
+                        TIME
+                    ================================= */}
 
                     <div className="schedule-time">
 
@@ -779,6 +1389,7 @@ function Study() {
                           session.startTime,
                         )}
                       </strong>
+
 
                       <span>
                         {formatTime(
@@ -789,15 +1400,20 @@ function Study() {
                     </div>
 
 
-                    {/* CONTENT */}
+                    {/* =================================
+                        CONTENT
+                    ================================= */}
 
                     <div className="schedule-content">
+
+                      {/* SUBJECT */}
 
                       <div className="schedule-title-row">
 
                         <h3>
                           {session.subject}
                         </h3>
+
 
                         {session.code && (
 
@@ -809,6 +1425,8 @@ function Study() {
 
                       </div>
 
+
+                      {/* TAGS */}
 
                       <div className="schedule-tags">
 
@@ -850,6 +1468,8 @@ function Study() {
                       </div>
 
 
+                      {/* LOCATION */}
+
                       {session.location && (
 
                         <div className="location">
@@ -867,7 +1487,9 @@ function Study() {
                       )}
 
 
-                      {/* ATTENDANCE */}
+                      {/* =================================
+                          ATTENDANCE
+                      ================================= */}
 
                       {isAttendanceClass && (
 
@@ -911,7 +1533,9 @@ function Study() {
                     </div>
 
                   </button>
+
                 )
+
               },
             )}
 
@@ -964,28 +1588,38 @@ function Study() {
 
 
       {/* =================================================
-          MODAL
+          ATTENDANCE MODAL
       ================================================= */}
 
       {selectedSession && (
 
-       <AttendanceModal
-  session={selectedSession}
-  currentStatus={
-    getStatusForSession(
-      selectedSession.occurrenceId,
-    )
-  }
-  onSave={
-    handleAttendanceSave
-  }
-  onUnmark={
-    handleAttendanceUnmark
-  }
-  onClose={() =>
-    setSelectedSessionId(null)
-  }
-/>
+        <AttendanceModal
+
+          session={
+            selectedSession
+          }
+
+          currentStatus={
+            getStatusForSession(
+              selectedSession.occurrenceId,
+            )
+          }
+
+          onSave={
+            handleAttendanceSave
+          }
+
+          onUnmark={
+            handleAttendanceUnmark
+          }
+
+          onClose={() =>
+            setSelectedSessionId(
+              null,
+            )
+          }
+
+        />
 
       )}
 

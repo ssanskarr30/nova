@@ -35,9 +35,10 @@ import {
 function formatDate(
   dateString: string,
 ) {
-  const date = new Date(
-    `${dateString}T00:00:00`,
-  )
+  const date =
+    new Date(
+      `${dateString}T00:00:00`,
+    )
 
   return date.toLocaleDateString(
     'en-IN',
@@ -54,9 +55,10 @@ function formatDate(
 function formatShortDate(
   dateString: string,
 ) {
-  const date = new Date(
-    `${dateString}T00:00:00`,
-  )
+  const date =
+    new Date(
+      `${dateString}T00:00:00`,
+    )
 
   return date.toLocaleDateString(
     'en-IN',
@@ -71,9 +73,10 @@ function formatShortDate(
 function formatMonth(
   dateString: string,
 ) {
-  const date = new Date(
-    `${dateString}-01T00:00:00`,
-  )
+  const date =
+    new Date(
+      `${dateString}-01T00:00:00`,
+    )
 
   return date.toLocaleDateString(
     'en-IN',
@@ -106,11 +109,9 @@ function getMonthKey(
 
 function Attendance() {
 
-  /*
-   * ===================================================
-   * DATABASE
-   * ===================================================
-   */
+  /* ===================================================
+     DATABASE
+  =================================================== */
 
   const attendanceQuery =
     useLiveQuery(
@@ -122,15 +123,14 @@ function Attendance() {
       [],
     )
 
-  const records: AttendanceRecord[] =
-    attendanceQuery ?? []
+  const records:
+    AttendanceRecord[] =
+      attendanceQuery ?? []
 
 
-  /*
-   * ===================================================
-   * MONTH
-   * ===================================================
-   */
+  /* ===================================================
+     SELECTED MONTH
+  =================================================== */
 
   const [
     selectedMonth,
@@ -142,11 +142,9 @@ function Attendance() {
   )
 
 
-  /*
-   * ===================================================
-   * EXPANDED SUBJECT
-   * ===================================================
-   */
+  /* ===================================================
+     EXPANDED SUBJECT
+  =================================================== */
 
   const [
     expandedSubject,
@@ -156,11 +154,12 @@ function Attendance() {
   >(null)
 
 
-  /*
-   * ===================================================
-   * MONTHLY SUMMARY
-   * ===================================================
-   */
+  /* ===================================================
+     MONTHLY RECORDS
+     
+     EVERYTHING displayed in the
+     summary is based on this month.
+  =================================================== */
 
   const monthlyRecords =
     useMemo(
@@ -178,17 +177,22 @@ function Attendance() {
     )
 
 
+  /* ===================================================
+     MONTHLY OVERALL STATS
+  =================================================== */
+
   const monthlyStats =
     calculateAttendance(
       monthlyRecords,
     )
 
 
-  /*
-   * ===================================================
-   * SUBJECT LIST
-   * ===================================================
-   */
+  /* ===================================================
+     SUBJECT LIST
+     
+     Subjects are taken from ALL records so that
+     a subject remains visible when changing months.
+  =================================================== */
 
   const subjects =
     useMemo(() => {
@@ -216,6 +220,7 @@ function Attendance() {
               record.subjectCode,
             )
           ) {
+
             subjectMap.set(
               record.subjectCode,
               {
@@ -226,7 +231,9 @@ function Attendance() {
                   record.subject,
               },
             )
+
           }
+
         },
       )
 
@@ -234,14 +241,14 @@ function Attendance() {
         subjectMap.values(),
       )
 
-    }, [records])
+    }, [
+      records,
+    ])
 
 
-  /*
-   * ===================================================
-   * SUBJECT RECORDS
-   * ===================================================
-   */
+  /* ===================================================
+     GET ALL RECORDS FOR SUBJECT
+  =================================================== */
 
   function getSubjectRecords(
     code: string,
@@ -255,39 +262,63 @@ function Attendance() {
   }
 
 
-  /*
-   * ===================================================
-   * SUBJECT STATISTICS
-   * ===================================================
-   */
+  /* ===================================================
+     GET MONTHLY RECORDS FOR SUBJECT
+  =================================================== */
+
+  function getMonthlySubjectRecords(
+    code: string,
+  ): AttendanceRecord[] {
+
+    return records.filter(
+      (record) =>
+        record.subjectCode ===
+          code &&
+        record.date.startsWith(
+          selectedMonth,
+        ),
+    )
+  }
+
+
+  /* ===================================================
+     SUBJECT STATISTICS
+     
+     IMPORTANT:
+     These statistics are now MONTH-WISE.
+  =================================================== */
 
   function getSubjectStats(
     code: string,
   ) {
 
-    const subjectRecords =
-      getSubjectRecords(
+    const monthlySubjectRecords =
+      getMonthlySubjectRecords(
         code,
       )
 
+
     const theoryRecords =
-      subjectRecords.filter(
+      monthlySubjectRecords.filter(
         (record) =>
           record.classType ===
           'theory',
       )
 
+
     const practicalRecords =
-      subjectRecords.filter(
+      monthlySubjectRecords.filter(
         (record) =>
           record.classType ===
           'practical',
       )
 
+
     return {
+
       overall:
         calculateAttendance(
-          subjectRecords,
+          monthlySubjectRecords,
         ),
 
       theory:
@@ -299,15 +330,14 @@ function Attendance() {
         calculateAttendance(
           practicalRecords,
         ),
+
     }
   }
 
 
-  /*
-   * ===================================================
-   * RENDER
-   * ===================================================
-   */
+  /* ===================================================
+     RENDER
+  =================================================== */
 
   return (
     <div className="page attendance-page">
@@ -316,7 +346,9 @@ function Attendance() {
           HEADER
       ================================================= */}
 
-      <header className="page-header attendance-page-header">
+      <header
+        className="page-header attendance-page-header"
+      >
 
         <div>
 
@@ -425,9 +457,13 @@ function Attendance() {
           SUBJECT SECTION
       ================================================= */}
 
-      <section className="attendance-subject-section">
+      <section
+        className="attendance-subject-section"
+      >
 
-        <div className="attendance-section-heading">
+        <div
+          className="attendance-section-heading"
+        >
 
           <div>
 
@@ -453,7 +489,9 @@ function Attendance() {
 
           <div className="attendance-empty">
 
-            <div className="attendance-empty-icon">
+            <div
+              className="attendance-empty-icon"
+            >
 
               <CalendarDays
                 size={23}
@@ -477,7 +515,9 @@ function Attendance() {
 
         ) : (
 
-          <div className="attendance-subject-list">
+          <div
+            className="attendance-subject-list"
+          >
 
             {subjects.map(
               (subject) => {
@@ -488,6 +528,14 @@ function Attendance() {
                   )
 
 
+                /*
+                 * IMPORTANT:
+                 *
+                 * Target is now calculated
+                 * using THIS MONTH'S subject
+                 * attendance.
+                 */
+
                 const target =
                   getAttendanceTarget(
                     stats.overall,
@@ -496,6 +544,12 @@ function Attendance() {
 
                 const subjectRecords =
                   getSubjectRecords(
+                    subject.code,
+                  )
+
+
+                const monthlySubjectRecords =
+                  getMonthlySubjectRecords(
                     subject.code,
                   )
 
@@ -540,6 +594,10 @@ function Attendance() {
                       subjectRecords
                     }
 
+                    monthlyRecords={
+                      monthlySubjectRecords
+                    }
+
                     selectedMonth={
                       selectedMonth
                     }
@@ -564,9 +622,13 @@ function Attendance() {
 
       {records.length > 0 && (
 
-        <section className="attendance-history-section">
+        <section
+          className="attendance-history-section"
+        >
 
-          <div className="attendance-section-heading">
+          <div
+            className="attendance-section-heading"
+          >
 
             <div>
 
@@ -640,26 +702,29 @@ function SubjectCard({
 
   records: AttendanceRecord[]
 
+  monthlyRecords: AttendanceRecord[]
+
   selectedMonth: string
 }) {
 
-  const monthlyRecords =
-    records.filter(
-      (record) =>
-        record.date.startsWith(
-          selectedMonth,
-        ),
-    )
-
-
-  const monthlyStats =
-    calculateAttendance(
-      monthlyRecords,
-    )
-
+  /*
+   * The main percentage is now
+   * the SELECTED MONTH percentage.
+   */
 
   const percentage =
     stats.overall.percentage
+
+
+  /*
+   * Monthly attendance count.
+   */
+
+  const monthlyPresent =
+    stats.overall.present
+
+  const monthlyTotal =
+    stats.overall.totalClasses
 
 
   return (
@@ -673,7 +738,7 @@ function SubjectCard({
     >
 
       {/* =================================================
-          TOP / SUBJECT
+          SUBJECT HEADER
       ================================================= */}
 
       <button
@@ -687,22 +752,34 @@ function SubjectCard({
         }
       >
 
-        <div className="attendance-subject-main">
+        <div
+          className="attendance-subject-main"
+        >
 
-          <div className="attendance-subject-title">
+          <div
+            className="attendance-subject-title"
+          >
 
             <h3>
               {subject.subject}
             </h3>
 
-            <span className="attendance-subject-code">
+            <span
+              className="attendance-subject-code"
+            >
               {subject.code}
             </span>
 
           </div>
 
 
-          <div className="subject-progress-track">
+          {/* =============================================
+              MONTHLY PROGRESS
+          ============================================= */}
+
+          <div
+            className="subject-progress-track"
+          >
 
             <div
               className={`subject-progress-fill ${
@@ -727,7 +804,13 @@ function SubjectCard({
         </div>
 
 
-        <div className="attendance-subject-percentage">
+        {/* =============================================
+            MONTHLY PERCENTAGE
+        ============================================= */}
+
+        <div
+          className="attendance-subject-percentage"
+        >
 
           <strong>
 
@@ -740,7 +823,9 @@ function SubjectCard({
           </strong>
 
 
-          <span className="attendance-expand-icon">
+          <span
+            className="attendance-expand-icon"
+          >
 
             {expanded ? (
 
@@ -767,7 +852,9 @@ function SubjectCard({
           MONTH SUMMARY
       ================================================= */}
 
-      <div className="subject-month-summary">
+      <div
+        className="subject-month-summary"
+      >
 
         <div>
 
@@ -779,16 +866,18 @@ function SubjectCard({
 
           <strong>
 
-            {monthlyStats.present}
+            {monthlyPresent}
             {' / '}
-            {monthlyStats.totalClasses}
+            {monthlyTotal}
 
           </strong>
 
         </div>
 
 
-        <span className="subject-month-label">
+        <span
+          className="subject-month-label"
+        >
           attended this month
         </span>
 
@@ -797,9 +886,13 @@ function SubjectCard({
 
       {/* =================================================
           THEORY / PRACTICAL
+          
+          THESE ARE ALSO MONTH-WISE.
       ================================================= */}
 
-      <div className="subject-type-grid">
+      <div
+        className="subject-type-grid"
+      >
 
         <TypeAttendance
           label="Theory"
@@ -825,7 +918,7 @@ function SubjectCard({
 
 
       {/* =================================================
-          SAFETY
+          MONTHLY 75% SAFETY
       ================================================= */}
 
       <AttendanceSafetyMessage
@@ -837,17 +930,25 @@ function SubjectCard({
 
       {/* =================================================
           EXPANDED HISTORY
+          
+          ALL-TIME HISTORY REMAINS HERE.
       ================================================= */}
 
       {expanded && (
 
-        <div className="subject-history">
+        <div
+          className="subject-history"
+        >
 
-          <div className="subject-history-header">
+          <div
+            className="subject-history-header"
+          >
 
             <div>
 
-              <span className="section-overline">
+              <span
+                className="section-overline"
+              >
                 HISTORY
               </span>
 
@@ -865,8 +966,7 @@ function SubjectCard({
           </div>
 
 
-          {records.length ===
-          0 ? (
+          {records.length === 0 ? (
 
             <p className="no-history">
               No attendance recorded.
@@ -874,7 +974,9 @@ function SubjectCard({
 
           ) : (
 
-            <div className="subject-history-list">
+            <div
+              className="subject-history-list"
+            >
 
               {records
                 .slice()
@@ -897,7 +999,9 @@ function SubjectCard({
                       className="history-row"
                     >
 
-                      <div className="history-date-block">
+                      <div
+                        className="history-date-block"
+                      >
 
                         <strong>
                           {formatDate(
@@ -989,9 +1093,13 @@ function TypeAttendance({
 
   return (
 
-    <div className="attendance-type-card">
+    <div
+      className="attendance-type-card"
+    >
 
-      <div className="attendance-type-top">
+      <div
+        className="attendance-type-top"
+      >
 
         <span>
           {label}
@@ -1011,7 +1119,9 @@ function TypeAttendance({
       </div>
 
 
-      <div className="attendance-type-count">
+      <div
+        className="attendance-type-count"
+      >
 
         <span>
           {stats.present} present
@@ -1024,8 +1134,7 @@ function TypeAttendance({
       </div>
 
 
-      {stats.totalClasses >
-        0 && (
+      {stats.totalClasses > 0 && (
 
         <span
           className={`attendance-type-safety ${
@@ -1085,9 +1194,13 @@ function AttendanceSafetyMessage({
 
     return (
 
-      <div className="attendance-safety-message shortage">
+      <div
+        className="attendance-safety-message shortage"
+      >
 
-        <div className="safety-message-icon">
+        <div
+          className="safety-message-icon"
+        >
 
           <AlertTriangle
             size={16}
@@ -1138,9 +1251,13 @@ function AttendanceSafetyMessage({
 
     return (
 
-      <div className="attendance-safety-message minimum">
+      <div
+        className="attendance-safety-message minimum"
+      >
 
-        <div className="safety-message-icon">
+        <div
+          className="safety-message-icon"
+        >
 
           <CircleAlert
             size={16}
@@ -1175,9 +1292,13 @@ function AttendanceSafetyMessage({
 
   return (
 
-    <div className="attendance-safety-message safe">
+    <div
+      className="attendance-safety-message safe"
+    >
 
-      <div className="safety-message-icon">
+      <div
+        className="safety-message-icon"
+      >
 
         <Check
           size={16}
@@ -1273,7 +1394,9 @@ function RecentHistory({
 
   return (
 
-    <div className="recent-history">
+    <div
+      className="recent-history"
+    >
 
       {dates.map(
         (date) => {
@@ -1297,7 +1420,9 @@ function RecentHistory({
               className="recent-history-day"
             >
 
-              <div className="recent-history-date">
+              <div
+                className="recent-history-date"
+              >
 
                 <strong>
                   {formatShortDate(
@@ -1318,7 +1443,9 @@ function RecentHistory({
               </div>
 
 
-              <div className="recent-history-statuses">
+              <div
+                className="recent-history-statuses"
+              >
 
                 {dayRecords.map(
                   (record) => (
@@ -1394,7 +1521,7 @@ function getAvailableMonths(
 
 
   /*
-   * Always show the current month.
+   * Always show current month.
    */
 
   months.add(

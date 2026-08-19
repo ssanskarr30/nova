@@ -195,6 +195,14 @@
   backdrop-filter: blur(12px);
 }
 
+/* =====================================================
+   HERO — REMOVE DECORATIVE ORB
+===================================================== */
+
+.hero-orb {
+  display: none;
+}
+
 
 /* =========================
    SECTIONS
@@ -293,9 +301,9 @@
 }
 
 
-/* =========================
+/* =====================================================
    QUICK ACTIONS
-========================= */
+===================================================== */
 
 .quick-actions {
   display: grid;
@@ -310,6 +318,8 @@
   width: 100%;
 
   padding: 15px;
+
+  color: var(--text);
 
   text-align: left;
 
@@ -353,6 +363,8 @@
 .quick-action strong {
   margin-bottom: 4px;
 
+  color: var(--text);
+
   font-size: 14px;
   font-weight: 600;
 }
@@ -362,8 +374,6 @@
 
   font-size: 11px;
 }
-
-
 /* =========================
    READY CARD
 ========================= */
@@ -5232,6 +5242,27 @@ html[data-theme='dark'] .next-class-card h2 {
 }
 
 /* =====================================================
+   DARK MODE — MORE PAGE CARDS
+===================================================== */
+
+/*
+ * Buttons have their own browser text color by default.
+ * Explicitly bind the More page card text to the theme
+ * variables so titles remain white in dark mode.
+ */
+html[data-theme='dark'] .feature-card {
+  color: var(--text);
+}
+
+html[data-theme='dark'] .feature-card strong {
+  color: #ffffff;
+}
+
+html[data-theme='dark'] .feature-card span {
+  color: var(--muted);
+}
+
+/* =====================================================
    SETTINGS
 ===================================================== */
 
@@ -5377,4 +5408,471 @@ html[data-theme='dark'] .next-class-card h2 {
 .settings-warning svg {
   flex-shrink: 0;
   margin-top: 1px;
+}
+
+/* =====================================================
+   CALENDAR WRAPPER
+===================================================== */
+
+.timetable-calendar-wrapper {
+  position: relative;
+}
+
+
+/* =====================================================
+   CALENDAR BUTTON
+===================================================== */
+
+.timetable-calendar-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* =====================================================
+   CALENDAR POPOVER
+===================================================== */
+
+.attendance-calendar-popover {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 1000;
+
+  width: 320px;
+
+  padding: 18px;
+
+  background: var(--card-bg, #ffffff);
+
+  border: 1px solid
+    var(--border-color, #e5e7eb);
+
+  border-radius: 22px;
+
+  box-shadow:
+    0 18px 50px
+      rgba(0, 0, 0, 0.14);
+
+  animation:
+    calendar-popover-in
+    0.18s ease-out;
+}
+
+
+@keyframes calendar-popover-in {
+  from {
+    opacity: 0;
+    transform:
+      translateY(-6px)
+      scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+
+/* =====================================================
+   CALENDAR HEADER
+===================================================== */
+
+.attendance-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 18px;
+}
+
+
+.attendance-calendar-nav {
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
+  border-radius: 10px;
+
+  background: var(
+    --surface-secondary,
+    #f4f4f7
+  );
+
+  color: inherit;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s,
+    transform 0.15s;
+}
+
+
+.attendance-calendar-nav:hover {
+  transform: scale(1.04);
+
+  background: var(
+    --surface-hover,
+    #ececf2
+  );
+}
+
+
+.attendance-calendar-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+
+.attendance-calendar-title strong {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+
+.attendance-calendar-title button {
+  border: 0;
+  padding: 0;
+
+  background: transparent;
+
+  color: #6366f1;
+
+  font-size: 11px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+
+/* =====================================================
+   WEEKDAYS
+===================================================== */
+
+.attendance-calendar-weekdays {
+  display: grid;
+
+  grid-template-columns:
+    repeat(7, 1fr);
+
+  margin-bottom: 7px;
+}
+
+
+.attendance-calendar-weekdays span {
+  text-align: center;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 0.06em;
+
+  color: #9294a3;
+}
+
+
+/* =====================================================
+   CALENDAR GRID
+===================================================== */
+
+.attendance-calendar-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(7, 1fr);
+
+  gap: 4px;
+}
+
+
+/* =====================================================
+   CALENDAR DAY
+===================================================== */
+
+.attendance-calendar-day {
+  position: relative;
+
+  height: 42px;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
+
+  border-radius: 12px;
+
+  background: transparent;
+
+  color: inherit;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s,
+    transform 0.15s;
+}
+
+
+.attendance-calendar-day:hover {
+  background: var(
+    --surface-secondary,
+    #f4f4f7
+  );
+
+  transform: translateY(-1px);
+}
+
+
+.calendar-day-number {
+  position: relative;
+
+  z-index: 2;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+
+/* =====================================================
+   OUTSIDE CURRENT MONTH
+===================================================== */
+
+.attendance-calendar-day.outside-month {
+  opacity: 0.3;
+}
+
+
+/* =====================================================
+   SELECTED DAY
+===================================================== */
+
+.attendance-calendar-day.selected {
+  background: #6366f1;
+  color: white;
+}
+
+
+.attendance-calendar-day.selected:hover {
+  background: #595bdc;
+}
+
+
+/* =====================================================
+   TODAY
+===================================================== */
+
+.attendance-calendar-day.today
+  .calendar-day-number {
+  text-decoration:
+    underline;
+
+  text-underline-offset: 3px;
+}
+
+
+/*
+ * If today is not selected,
+ * give it a subtle outline.
+ */
+
+.attendance-calendar-day.today:not(.selected) {
+  box-shadow:
+    inset 0 0 0 1.5px
+      rgba(99, 102, 241, 0.45);
+}
+
+
+/* =====================================================
+   ATTENDANCE DOTS
+===================================================== */
+
+.calendar-attendance-dots {
+  position: absolute;
+
+  bottom: 5px;
+
+  left: 50%;
+
+  transform:
+    translateX(-50%);
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 3px;
+}
+
+
+.calendar-dot {
+  width: 5px;
+  height: 5px;
+
+  display: inline-block;
+
+  border-radius: 50%;
+
+  flex: 0 0 auto;
+}
+
+
+/*
+ * Present
+ */
+
+.calendar-dot.present {
+  background: #22a06b;
+}
+
+
+/*
+ * Absent
+ */
+
+.calendar-dot.absent {
+  background: #e05252;
+}
+
+
+/*
+ * Cancelled / Holiday
+ */
+
+.calendar-dot.other {
+  background: #d49a35;
+}
+
+
+/*
+ * Keep dots visible on selected
+ * purple day.
+ */
+
+.attendance-calendar-day.selected
+  .calendar-dot.present {
+  background: #b9f3d4;
+}
+
+
+.attendance-calendar-day.selected
+  .calendar-dot.absent {
+  background: #ffc0c0;
+}
+
+
+.attendance-calendar-day.selected
+  .calendar-dot.other {
+  background: #ffe2a7;
+}
+
+
+/* =====================================================
+   CALENDAR LEGEND
+===================================================== */
+
+.attendance-calendar-legend {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  flex-wrap: wrap;
+
+  gap: 12px;
+
+  margin-top: 16px;
+  padding-top: 13px;
+
+  border-top: 1px solid
+    var(--border-color, #ececf0);
+}
+
+
+.attendance-calendar-legend span {
+  display: flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+  font-size: 10px;
+
+  color: #888a98;
+}
+
+
+/* =====================================================
+   DARK MODE
+===================================================== */
+
+[data-theme='dark']
+  .attendance-calendar-popover {
+  background: #18191f;
+
+  border-color: #2b2d35;
+
+  box-shadow:
+    0 18px 50px
+      rgba(0, 0, 0, 0.45);
+}
+
+
+[data-theme='dark']
+  .attendance-calendar-nav {
+  background: #23252d;
+
+  color: #f5f5f7;
+}
+
+
+[data-theme='dark']
+  .attendance-calendar-nav:hover {
+  background: #2d3039;
+}
+
+
+[data-theme='dark']
+  .attendance-calendar-title button {
+  color: #8587ff;
+}
+
+
+[data-theme='dark']
+  .attendance-calendar-weekdays span {
+  color: #777a88;
+}
+
+
+[data-theme='dark']
+  .attendance-calendar-day:hover {
+  background: #24262e;
+}
+
+
+[data-theme='dark']
+  .attendance-calendar-legend {
+  border-color: #2b2d35;
+}
+
+
+[data-theme='dark']
+  .attendance-calendar-legend span {
+  color: #8d909d;
 }
