@@ -1,3 +1,4 @@
+
 import type {
   AttendanceRecord,
 } from './database'
@@ -17,7 +18,10 @@ export interface AttendanceStats {
  * =====================================================
  * BASIC ATTENDANCE CALCULATION
  *
- * Cancelled + Holiday are NOT counted.
+ * ONLY THEORY + PRACTICAL CLASSES COUNT.
+ *
+ * Activities, breaks, and other class types are excluded.
+ * Cancelled + Holiday are NOT counted in totalClasses.
  *
  * Attendance =
  *
@@ -31,32 +35,35 @@ export function calculateAttendance(
   records: AttendanceRecord[],
 ): AttendanceStats {
 
-  const present =
+  const eligibleRecords =
     records.filter(
       (record) =>
-        record.status ===
-        'present',
+        record.classType === 'theory' ||
+        record.classType === 'practical',
+    )
+
+  const present =
+    eligibleRecords.filter(
+      (record) =>
+        record.status === 'present',
     ).length
 
   const absent =
-    records.filter(
+    eligibleRecords.filter(
       (record) =>
-        record.status ===
-        'absent',
+        record.status === 'absent',
     ).length
 
   const cancelled =
-    records.filter(
+    eligibleRecords.filter(
       (record) =>
-        record.status ===
-        'cancelled',
+        record.status === 'cancelled',
     ).length
 
   const holiday =
-    records.filter(
+    eligibleRecords.filter(
       (record) =>
-        record.status ===
-        'holiday',
+        record.status === 'holiday',
     ).length
 
   const totalClasses =
@@ -65,9 +72,7 @@ export function calculateAttendance(
   const percentage =
     totalClasses === 0
       ? null
-      : (present /
-          totalClasses) *
-        100
+      : (present / totalClasses) * 100
 
   return {
     present,
@@ -87,13 +92,12 @@ export function calculateAttendance(
  */
 
 export function roundPercentage(
-  percentage:
-    | number
-    | null,
+  percentage: number | null,
 ): number | null {
 
   if (
-    percentage === null
+    percentage === null ||
+    !Number.isFinite(percentage)
   ) {
     return null
   }
@@ -129,34 +133,37 @@ export function classesNeededFor75(
 
   const {
     present,
-    absent,
+    totalClasses,
   } = stats
 
-  const total =
-    present + absent
+  if (totalClasses === 0) {
+    return 0
+  }
 
   /*
-   * Already at or above 75%.
+   * Compare using integers to avoid floating-point
+   * precision problems around exactly 75%.
    */
 
   if (
-    total === 0 ||
-    present / total >= 0.75
+    present * 4 >= totalClasses * 3
   ) {
     return 0
   }
 
-  let classes = 0
+  /*
+   * (present + x) / (totalClasses + x) >= 3/4
+   *
+   * 4 * present + 4 * x >=
+   * 3 * totalClasses + 3 * x
+   *
+   * x >= 3 * totalClasses - 4 * present
+   */
 
-  while (
-    (present + classes) /
-      (total + classes) <
-    0.75
-  ) {
-    classes += 1
-  }
-
-  return classes
+  return Math.max(
+    0,
+    3 * totalClasses - 4 * present,
+  )
 }
 
 
@@ -187,19 +194,14 @@ export function classesCanMissAt75(
 
   const {
     present,
-    absent,
+    totalClasses,
   } = stats
-
-  const total =
-    present + absent
 
   /*
    * No attendance yet.
    */
 
-  if (
-    total === 0
-  ) {
+  if (totalClasses === 0) {
     return 0
   }
 
@@ -208,22 +210,23 @@ export function classesCanMissAt75(
    */
 
   if (
-    present / total < 0.75
+    present * 4 < totalClasses * 3
   ) {
     return 0
   }
 
-  let classes = 0
+  /*
+   * present / (totalClasses + x) >= 3/4
+   *
+   * x <= (4 * present - 3 * totalClasses) / 3
+   */
 
-  while (
-    present /
-      (total + classes + 1) >=
-    0.75
-  ) {
-    classes += 1
-  }
-
-  return classes
+  return Math.max(
+    0,
+    Math.floor(
+      (4 * present - 3 * totalClasses) / 3,
+    ),
+  )
 }
 
 
@@ -244,26 +247,31 @@ export function getAttendanceSafety(
   stats: AttendanceStats,
 ): AttendanceSafety {
 
+  const {
+    present,
+    totalClasses,
+    percentage,
+  } = stats
+
   if (
-    stats.totalClasses === 0
+    totalClasses === 0 ||
+    percentage === null
   ) {
     return 'no-data'
   }
 
-  if (
-    stats.percentage === null
-  ) {
-    return 'no-data'
-  }
+  /*
+   * Use exact integer comparisons for the 75% boundary.
+   */
 
   if (
-    stats.percentage < 75
+    present * 4 < totalClasses * 3
   ) {
     return 'shortage'
   }
 
   if (
-    stats.percentage === 75
+    present * 4 === totalClasses * 3
   ) {
     return 'minimum'
   }
